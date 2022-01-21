@@ -46,8 +46,15 @@ for line in f:
   w = line.strip()
 
   pts = 0
-  for letter in w:
-    pts += d[letter]
+  for letter in range(len(w)):
+    
+    pts += d[w[letter]]
+    for l in range(len(w)):
+      if l == letter:
+        continue
+      if w[l] == w[letter]:
+        pts -= 1000
+        break
   
   word_to_value[w] = pts
 
@@ -66,9 +73,9 @@ while len(potential_words) > 1:
   # pick a random word from the list
 
   if guess_num == 1 and len(potential_words[0]) == 5:
-    word = "notes"
-  elif guess_num == 2 and len(potential_words[0]) == 5:
-    word = "acrid"
+    word = "raise"
+  # elif guess_num == 2 and len(potential_words[0]) == 5:
+  #   word = "acrid"
   else:
     max_pt = -1
     word = potential_words[0]
@@ -79,11 +86,11 @@ while len(potential_words) > 1:
 
   print(str(len(potential_words)) + " optimal guess: " + word)
   guess = input("word guessed: ")
-  while guess == "/NEW" or guess == "/INVALID" or guess == "/ALL" or guess.isdigit():
+  while guess == "/NEW" or guess == "/INVALID" or guess == "/all" or guess.isdigit():
     if guess == "/INVALID":
       potential_words.remove(word)
 
-    elif guess == "/ALL":
+    elif guess == "/all":
       word_string = ""
       for i in range(len(potential_words)):
         word_string += potential_words[i] + " "
@@ -120,6 +127,10 @@ while len(potential_words) > 1:
         if guess[i] not in potential_words[j]:
           removed_word = potential_words.pop(j)
           f_out.write("(h " + word + " ) removed word: " + removed_word + " (" + str(guess[i]) + " is not in " + removed_word + ")\n")
+        elif guess[i] == potential_words[j][i]:
+          removed_word = potential_words.pop(j)
+          f_out.write("(h " + word + " ) removed word: " + removed_word + " (" + str(guess[i]) + " is not in " + removed_word + ")\n")
+
 
     elif result[i] == 'w':
       for j in range(len(potential_words) - 1, -1, -1):
