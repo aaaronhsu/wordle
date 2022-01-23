@@ -34,27 +34,38 @@ d = {
 
 word_to_value = dict()
 
-f = open("words_long.txt", "r")
-with open("wordle.txt", "r+") as f_clear:
-  f_clear.truncate(0)
+f = open("word_list", "r")
+f_common = open("common_words", "r")
+
+common = []
+for line in f_common:
+  w = line.strip()
+  if len(w) == 5:
+    common.append(w)
+
 
 f_out = open("wordle.txt", "w+")
 
 # put all words in a list
 potential_words = []
 for line in f:
-  w = line.strip()
+  w = line.strip().lower()
+
 
   pts = 0
+
+  if w in common:
+    pts += 1000
+
+  dup = dict()
   for letter in range(len(w)):
     
     pts += d[w[letter]]
-    for l in range(len(w)):
-      if l == letter:
-        continue
-      if w[l] == w[letter]:
-        pts -= 1000
-        break
+    if w[letter] in dup:  
+      pts -= 10 ** (dup[w[letter]] + 1)
+      dup[w[letter]] += 1
+    else:
+      dup[w[letter]] = 1
   
   word_to_value[w] = pts
 
@@ -138,7 +149,7 @@ while len(potential_words) > 1:
 
           skip = False
           for k in range(len(guess)):
-            if result[k] == 'c' and guess[k] not in correct_letters and guess[k] == guess[i]:
+            if (result[k] == 'c' or guess[k] in correct_letters or result[k] == 'h') and guess[k] == guess[i]:
               skip = True
               continue
 
@@ -150,3 +161,5 @@ while len(potential_words) > 1:
     f_out.write("\n")
 
   guess_num += 1
+
+print("it's " + potential_words[0] + "!")
