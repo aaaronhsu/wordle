@@ -18,10 +18,10 @@ def get_screenshot():
   image = pyscreenshot.grab()
     
   # To save the screenshot
-  image.save("img.png")
+  # image.save("img.png")
 
-  img = Image.open("img.png")
-  pixels = np.array(img)
+  # img = Image.open("img.png")
+  pixels = np.array(image)
 
   found = False
   
@@ -84,55 +84,47 @@ d = {
   "z": 0.09
 }
 
-for i in range(10):
-  word_to_value = dict()
-
-  f = open("word_list", "r")
-  f_common = open("common_words", "r")
-  f_commoner = open("commoner_words", "r")
-
-  common = []
-  for line in f_common:
-    w = line.strip()
-    if len(w) == 5:
-      common.append(w)
-
-  commoner = []
-  for line in f_commoner:
-    w = line.strip()
-    if len(w) == 5:
-      commoner.append(w)
-
-
-  f_out = open("wordle.txt", "w+")
-
-  # put all words in a list
-  potential_words = []
-  for line in f:
-    w = line.strip().lower()
-
-
-    pts = 0
-
-    if w in common:
-      pts += 1000
-    if w in commoner:
-      pts += 300
-
-    dup = dict()
-    for letter in range(len(w)):
-      
-      pts += d[w[letter]]
-      if w[letter] in dup:  
-        pts -= 10 ** (dup[w[letter]] + 1)
-        dup[w[letter]] += 1
-      else:
-        dup[w[letter]] = 1
+f = open("word_list", "r")
+f_common = open("common_words", "r")
+f_commoner = open("commoner_words", "r")
+word_to_value = dict()
+common = []
+for line in f_common:
+  w = line.strip()
+  if len(w) == 5:
+    common.append(w)
+commoner = []
+for line in f_commoner:
+  w = line.strip()
+  if len(w) == 5:
+    commoner.append(w)
+f_out = open("wordle.txt", "w+")
+# put all words in a list
+raw_potential_words = []
+for line in f:
+  w = line.strip().lower()
+  pts = 0
+  if w in common:
+    pts += 1000
+  if w in commoner:
+    pts += 300
+  dup = dict()
+  for letter in range(len(w)):
     
-    word_to_value[w] = pts
+    pts += d[w[letter]]
+    if w[letter] in dup:  
+      pts -= 10 ** (dup[w[letter]] + 1)
+      dup[w[letter]] += 1
+    else:
+      dup[w[letter]] = 1
+  
+  word_to_value[w] = pts
+  if len(w) == word_size:
+    raw_potential_words.append(w)
 
-    if len(w) == word_size:
-      potential_words.append(w)
+for i in range(10):
+
+  potential_words = raw_potential_words[:]
 
   correct_letters = []
 
@@ -208,6 +200,8 @@ for i in range(10):
       f_out.write("\n")
 
     guess_num += 1
+    if guess in potential_words and len(potential_words) > 1:
+      potential_words.remove(guess)
 
   if (len(potential_words) == 1):
     enter_word(potential_words[0])
