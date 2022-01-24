@@ -46,8 +46,11 @@ def determine_result(arr):
       l += "c"
     elif arr[i][0] == 243:
       l += "h"
-    else:
+    elif arr[i][0] == 164:
       l += "w"
+    else:
+      l += "?"
+      time.sleep(100)
 
   return l
 

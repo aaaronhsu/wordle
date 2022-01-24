@@ -4,7 +4,7 @@ from PIL import ImageGrab
 from pynput.keyboard import Key, Controller
 import time
 
-
+num_runs = 3000
 
 def enter_word(word):
   keyboard = Controller()
@@ -15,10 +15,10 @@ def enter_word(word):
 def get_screenshot():
   # To capture the screen
   time.sleep(0.03)
-  image = ImageGrab.grab(bbox = (792, 230, 1080, 600))
+  image = ImageGrab.grab(bbox = (783, 226, 1065, 507))
     
   # To save the screenshot
-  # image.save("img.png")
+  image.save("img.png")
 
   # img = Image.open("img.png")
   pixels = np.array(image)
@@ -27,7 +27,7 @@ def get_screenshot():
   
   last = []
 
-  for i in range(6):
+  for i in range(5):
     l = []
     if pixels[i * 70][0][0] == 255:
       if len(last) == 0:
@@ -48,8 +48,11 @@ def determine_result(arr):
       l += "c"
     elif arr[i][0] == 243:
       l += "h"
-    else:
+    elif arr[i][0] == 164:
       l += "w"
+    else:
+      l += "?"
+      time.sleep(100)
 
   return l
 
@@ -125,7 +128,14 @@ for line in f:
 
 word_to_value = dict(sorted(word_to_value2.items(), key=lambda x: x[1], reverse=True))
 
-for i in range(10):
+
+final_results = dict()
+for i in range(1, 7):
+  final_results[i] = 0
+
+final_results[-1] = 0
+
+for i in range(num_runs):
 
   potential_words = word_to_value.copy()
 
@@ -192,12 +202,13 @@ for i in range(10):
       potential_words = d2
       f_out.write("\n")
 
-    guess_num += 1
     
     if (len(potential_words) == 1):
       print("it's " + next(iter(potential_words)) + "!")
       print("\n")
+      final_results[guess_num] += 1
   
+    guess_num += 1
 
   if (len(potential_words) == 1):
     enter_word(next(iter(potential_words)))
@@ -208,3 +219,12 @@ for i in range(10):
   keyboard.release(Key.enter)
   keyboard.press(Key.enter)
   keyboard.release(Key.enter)
+
+print("FINAL RESULTS:")
+fail = 0
+for key in final_results:
+  if (key != -1):
+    print(str(key) + " TRIES: " + str(final_results[key]) + " (" + str((100 * final_results[key]) / num_runs) + "%)")
+    fail += final_results[key]
+  else:
+    print("FAILED: " + str(num_runs - fail) + " (" + str((100 * (num_runs - fail)) / num_runs) + "%)")
