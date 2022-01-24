@@ -1,6 +1,7 @@
 import random
+import pyscreenshot
 import numpy as np
-from PIL import ImageGrab
+from PIL import Image
 from pynput.keyboard import Key, Controller
 import time
 
@@ -14,8 +15,7 @@ def enter_word(word):
 
 def get_screenshot():
   # To capture the screen
-  time.sleep(0.03)
-  image = ImageGrab.grab(bbox = (792, 230, 1080, 600))
+  image = pyscreenshot.grab()
     
   # To save the screenshot
   # image.save("img.png")
@@ -27,17 +27,16 @@ def get_screenshot():
   
   last = []
 
-  for i in range(6):
+  for i in range(230, 600, 70):
     l = []
-    if pixels[i * 70][0][0] == 255:
-      if len(last) == 0:
-        return "REDO"
-      return last
-
-    for j in range(5):
-      l.append(pixels[i * 70][j * 70])
+    for j in range(792, 1080, 70):
+      l.append(pixels[i][j])
     
-    last = l
+    if l[0][0] == 255:
+      return last
+    else:
+      last = l
+      
   return last
 
 def determine_result(arr):
@@ -88,7 +87,7 @@ d = {
 f = open("word_list", "r")
 f_common = open("common_words", "r")
 f_commoner = open("commoner_words", "r")
-word_to_value2 = dict()
+word_to_value = dict()
 common = []
 for line in f_common:
   w = line.strip()
@@ -106,9 +105,9 @@ for line in f:
   w = line.strip().lower()
   pts = 0
   if w in common:
-    pts += 300
-  if w in commoner:
     pts += 1000
+  if w in commoner:
+    pts += 300
   dup = dict()
   for letter in range(len(w)):
     
@@ -119,15 +118,13 @@ for line in f:
     else:
       dup[w[letter]] = 1
   
-  word_to_value2[w] = pts
+  word_to_value[w] = pts
   if len(w) == word_size:
     raw_potential_words.append(w)
 
-word_to_value = dict(sorted(word_to_value2.items(), key=lambda x: x[1], reverse=True))
-
 for i in range(10):
 
-  potential_words = word_to_value.copy()
+  potential_words = raw_potential_words[:]
 
   correct_letters = []
 
@@ -140,71 +137,81 @@ for i in range(10):
   while len(potential_words) > 1:
     # pick a random word from the list
 
-    if guess_num == 1:
+    if guess_num == 1 and len(potential_words[0]) == 5:
       word = "raise"
+    # elif guess_num == 2 and len(potential_words[0]) == 5:
+    #   word = "acrid"
     else:
-      word = next(iter(potential_words))
+      max_pt = -1
+      word = potential_words[0]
+      for key in potential_words:
+        if word_to_value[key] > max_pt:
+          max_pt = word_to_value[key]
+          word = key
 
     print(str(len(potential_words)) + " optimal guess: " + word)
 
     enter_word(word)
     
     data = get_screenshot()
-    if data == "REDO":
-      break
     
     result = determine_result(data)
     guess = word
 
     for i in range(len(result)):
-      d2 = potential_words.copy()
       if result[i] == 'c':
         confirmed.append(i)
         correct_letters.append(guess[i])
-        for key in potential_words:
-          if key[i] != guess[i]:
-            del d2[key]
+        for j in range(len(potential_words) - 1, -1, -1):
+          if guess[i] != potential_words[j][i]:
+            removed_word = potential_words.pop(j)
+            f_out.write("(c " + word + " ) removed word: " + removed_word + " (" + str(guess[i]) + " is not in the " + str(i) + " position of " + removed_word + ")\n")
     
       elif result[i] == 'h':
-        for key in potential_words:
-          if guess[i] not in key or guess[i] == key[i]:
-            del d2[key]
-        if guess in d2:
-          del d2[guess]
+        if guess[i] not in hints:
+          hints[guess[i]] = [i]
+        else:
+          hints[guess[i]].append(i)
+
+        for j in range(len(potential_words) - 1, -1, -1):
+          if guess[i] not in potential_words[j]:
+            removed_word = potential_words.pop(j)
+            f_out.write("(h " + word + " ) removed word: " + removed_word + " (" + str(guess[i]) + " is not in " + removed_word + ")\n")
+          elif guess[i] == potential_words[j][i]:
+            removed_word = potential_words.pop(j)
+            f_out.write("(h " + word + " ) removed word: " + removed_word + " (" + str(guess[i]) + " is not in " + removed_word + ")\n")
 
 
       elif result[i] == 'w':
-        for key in potential_words:
-      
-          if guess[i] in key:
-            bk = False
-            for k in range(5):
-              if (result[k] == 'c' or result[k] == 'h') and guess[k] == guess[i]:
-                bk = True
-                break
-            
-            if not bk:
-              del d2[key]
-        
-        if guess in d2:
-          del d2[guess]
+        for j in range(len(potential_words) - 1, -1, -1):
+          if guess[i] in potential_words[j]:
 
-      potential_words = d2
+            skip = False
+            for k in range(len(guess)):
+              if (result[k] == 'c' or result[k] == 'h') and guess[k] == guess[i]:
+                skip = True
+                continue
+
+            if skip or guess[i] in correct_letters:
+              continue
+            removed_word = potential_words.pop(j)
+            f_out.write("(w " + word + " ) removed word: " + removed_word + " (" + str(guess[i]) + " is in " + removed_word + ")\n")
+
       f_out.write("\n")
 
     guess_num += 1
-    
-    if (len(potential_words) == 1):
-      print("it's " + next(iter(potential_words)) + "!")
-      print("\n")
-  
+    if guess in potential_words and len(potential_words) > 1:
+      potential_words.remove(guess)
 
   if (len(potential_words) == 1):
-    enter_word(next(iter(potential_words)))
+    enter_word(potential_words[0])
+  print("it's " + potential_words[0] + "!")
+  print("\n")
 
-  time.sleep(0.03)
+  time.sleep(0.1)
   keyboard = Controller()
   keyboard.press(Key.enter)
   keyboard.release(Key.enter)
   keyboard.press(Key.enter)
   keyboard.release(Key.enter)
+  time.sleep(0.1)
