@@ -1,4 +1,55 @@
 import random
+import pyscreenshot
+import numpy as np
+from PIL import Image
+from pynput.keyboard import Key, Controller
+
+
+
+def enter_word(word):
+  keyboard = Controller()
+  keyboard.type(word)
+  keyboard.press(Key.enter)
+  keyboard.release(Key.enter)
+
+def get_screenshot():
+  # To capture the screen
+  image = pyscreenshot.grab()
+    
+  # To save the screenshot
+  image.save("img.png")
+
+  img = Image.open("img.png")
+  pixels = np.array(img)
+
+  found = False
+  
+  last = []
+
+  for i in range(230, 600, 70):
+    l = []
+    for j in range(792, 1080, 70):
+      l.append(pixels[i][j])
+    
+    if l[0][0] == 255:
+      return last
+    else:
+      last = l
+      
+  return last
+
+def determine_result(arr):
+  l = ""
+  
+  for i in range(5):
+    if arr[i][0] == 121:
+      l += "c"
+    elif arr[i][0] == 243:
+      l += "h"
+    else:
+      l += "w"
+
+  return l
 
 word_size = 5
     
@@ -105,28 +156,13 @@ while len(potential_words) > 1:
         word = key
 
   print(str(len(potential_words)) + " optimal guess: " + word)
-  guess = input("word guessed: ")
-  while guess == "/NEW" or guess == "/INVALID" or guess == "/all" or guess.isdigit():
-    if guess == "/INVALID":
-      potential_words.remove(word)
 
-    elif guess == "/all":
-      word_string = ""
-      for i in range(len(potential_words)):
-        word_string += potential_words[i] + " "
-      print(word_string)  
-
-    elif guess.isdigit():
-      num_words = int(guess)
-      word_string = ""
-      for i in range(num_words):
-        word_string += potential_words[random.randint(0, len(potential_words) - 1)] + " "
-      print(word_string)
-    else:
-      word = potential_words[random.randint(0, len(potential_words) - 1)]
-      print(str(len(potential_words)) + " optimal guess: " + word)
-    guess = input("word guessed: ")
-  result = input("result: ")
+  enter_word(word)
+  
+  data = get_screenshot()
+  
+  result = determine_result(data)
+  guess = word
 
   for i in range(len(result)):
     if result[i] == 'c':
@@ -171,4 +207,10 @@ while len(potential_words) > 1:
 
   guess_num += 1
 
+enter_word(potential_words[0])
 print("it's " + potential_words[0] + "!")
+
+keyboard = Controller()
+keyboard.type(word)
+keyboard.press(Key.enter)
+keyboard.release(Key.enter)
