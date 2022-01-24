@@ -102,7 +102,7 @@ for line in f_commoner:
   w = line.strip()
   if len(w) == 5:
     commoner.append(w)
-f_out = open("wordle.txt", "w+")
+
 # put all words in a list
 raw_potential_words = []
 for line in f:
@@ -200,7 +200,6 @@ for i in range(num_runs):
           del d2[guess]
 
       potential_words = d2
-      f_out.write("\n")
 
     
     if (len(potential_words) == 1):
